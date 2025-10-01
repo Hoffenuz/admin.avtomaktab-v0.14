@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-// Import your existing Supabase client instance that manages auth/session on the frontend.
-// Adjust the import path if your project keeps the client in a different file.
-import { supabase } from '../lib/supabaseClient';
+import { getAdminToken } from './AdminLoginForm';
 
 export default function ItemsList() {
   const [items, setItems] = useState([]);
@@ -16,24 +14,8 @@ export default function ItemsList() {
       setErrorMessage(null);
 
       try {
-        // Obtain the current user's access token in a way that supports both
-        // supabase-js v1 and v2 client APIs.
-        let accessToken = null;
-
-        if (supabase && supabase.auth) {
-          // v2: supabase.auth.getSession() -> { data: { session } }
-          if (typeof supabase.auth.getSession === 'function') {
-            const sessionResult = await supabase.auth.getSession();
-            accessToken = sessionResult?.data?.session?.access_token || null;
-          }
-
-          // v1 fallback: supabase.auth.session()
-          if (!accessToken && typeof supabase.auth.session === 'function') {
-            const session = supabase.auth.session();
-            accessToken = session?.access_token || null;
-          }
-        }
-
+        // Use admin token (stored after admin login) to authenticate to server endpoints
+        const accessToken = getAdminToken() || localStorage.getItem('adminAuthToken');
         if (!accessToken) {
           setErrorMessage('Not authenticated. Please sign in.');
           setItems([]);

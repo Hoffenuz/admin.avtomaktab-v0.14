@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient.jsx";
+import api from '../lib/adminApi';
 import { useAuth } from "../AuthContext.jsx";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -36,13 +37,7 @@ function AdminSorovlar() {
     setError("");
     
     try {
-      let { data, error } = await supabase
-        .from("aloqa")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
+      const data = await api.adminSelect('aloqa', { select: '*', order: [{ column: 'created_at', ascending: false }] });
       setSorovlar(data || []);
       setFilteredSorovlar(data || []);
     } catch (error) {
@@ -59,13 +54,13 @@ function AdminSorovlar() {
 
   async function toggleHandled(sorov) {
     try {
-      const { error } = await supabase
-        .from("aloqa")
-        .update({ handled: !sorov.handled })
-        .eq("id", sorov.id);
-      if (error) throw error;
-      setSorovlar(prev => prev.map(s => s.id === sorov.id ? { ...s, handled: !sorov.handled } : s));
-      setFilteredSorovlar(prev => prev.map(s => s.id === sorov.id ? { ...s, handled: !sorov.handled } : s));
+      try {
+        await api.adminUpdate('aloqa', { id: sorov.id }, { handled: !sorov.handled });
+        setSorovlar(prev => prev.map(s => s.id === sorov.id ? { ...s, handled: !sorov.handled } : s));
+        setFilteredSorovlar(prev => prev.map(s => s.id === sorov.id ? { ...s, handled: !sorov.handled } : s));
+      } catch (e) {
+        throw e;
+      }
     } catch (e) {
       console.error("Handled flag update error:", e);
       alert("'aloqa' jadvalida 'handled' ustuni (boolean, default false) kerak.");
@@ -100,13 +95,13 @@ function AdminSorovlar() {
       description: "Bu so'rovni o'chirishni xohlaysizmi?",
       onConfirm: async () => {
         try {
-          const { error } = await supabase
-            .from("aloqa")
-            .delete()
-            .eq("id", id);
-          if (error) throw error;
-          setSorovlar(prev => prev.filter(sorov => sorov.id !== id));
-          setFilteredSorovlar(prev => prev.filter(sorov => sorov.id !== id));
+          try {
+            await api.adminDelete('aloqa', { id });
+            setSorovlar(prev => prev.filter(sorov => sorov.id !== id));
+            setFilteredSorovlar(prev => prev.filter(sorov => sorov.id !== id));
+          } catch (error) {
+            throw error;
+          }
         } catch (error) {
           console.error("So'rovni o'chirishda xatolik:", error);
           alert("So'rovni o'chirishda xatolik yuz berdi");

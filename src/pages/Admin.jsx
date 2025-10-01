@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient.jsx";
+import api from '../lib/adminApi';
 import { useAuth } from "../AuthContext.jsx";
 import { formatDate, toInputDateFormat, fromInputDateFormat, isValidDisplayDate, displayToIso, formatDateTime } from "../utils/dateUtils.js";
 import ConfirmModal from "../components/ConfirmModal.jsx";
@@ -102,30 +102,35 @@ function Admin() {
 
   // Users CRUD
   async function fetchUsers() {
-    let { data } = await supabase.from("users").select("*");
-    setUsers(data || []);
-    setFilteredUsers(data || []);
+    try {
+      const data = await api.adminSelect('users', { select: '*' });
+      setUsers(data || []);
+      setFilteredUsers(data || []);
+    } catch (e) {
+      console.error('fetchUsers error', e);
+    }
   }
 
   // So'rovlar CRUD
   async function fetchSorovlar() {
-    let { data } = await supabase
-      .from("aloqa")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setSorovlar(data || []);
-    setFilteredSorovlar(data || []);
+    try {
+      const data = await api.adminSelect('aloqa', { select: '*', order: [{ column: 'created_at', ascending: false }] });
+      setSorovlar(data || []);
+      setFilteredSorovlar(data || []);
+    } catch (e) {
+      console.error('fetchSorovlar error', e);
+    }
   }
 
   async function toggleSorovHandled(s) {
     try {
-      const { error } = await supabase
-        .from('aloqa')
-        .update({ handled: !s.handled })
-        .eq('id', s.id);
-      if (error) throw error;
-      setSorovlar(prev => prev.map(x => x.id === s.id ? { ...x, handled: !s.handled } : x));
-      setFilteredSorovlar(prev => prev.map(x => x.id === s.id ? { ...x, handled: !s.handled } : x));
+      try {
+        await api.adminUpdate('aloqa', { id: s.id }, { handled: !s.handled });
+        setSorovlar(prev => prev.map(x => x.id === s.id ? { ...x, handled: !s.handled } : x));
+        setFilteredSorovlar(prev => prev.map(x => x.id === s.id ? { ...x, handled: !s.handled } : x));
+      } catch (e) {
+        throw e;
+      }
     } catch (e) {
       alert("'aloqa' jadvalida 'handled' (boolean, default false) ustuni kerak.");
     }
@@ -154,12 +159,12 @@ function Admin() {
       title: "So'rovni o'chirish",
       description: "Bu so'rovni o'chirishni xohlaysizmi?",
       onConfirm: async () => {
-        const { error } = await supabase.from("aloqa").delete().eq("id", id);
-        if (error) {
-          alert("Xatolik: " + error.message);
-        } else {
+        try {
+          await api.adminDelete('aloqa', { id });
           setSorovlar(prev => prev.filter(s => s.id !== id));
           setFilteredSorovlar(prev => prev.filter(s => s.id !== id));
+        } catch (error) {
+          alert("Xatolik: " + error.message);
         }
         setConfirmState(cs => ({ ...cs, open: false }));
       }
@@ -170,11 +175,7 @@ function Admin() {
   async function fetchPayments() {
     setPaymentsError("");
     try {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .order('payment_date', { ascending: false });
-      if (error) throw error;
+      const data = await api.adminSelect('payments', { select: '*', order: [{ column: 'payment_date', ascending: false }] });
       setPayments(data || []);
       setFilteredPayments(data || []);
     } catch (e) {
@@ -244,8 +245,8 @@ function Admin() {
     };
     
     try {
-      const { error } = await supabase.from("users").insert([userToSave]);
-      if (!error) {
+      try {
+        await api.adminInsert('users', [userToSave]);
         setNewUser({ 
           fio: "", 
           phone: "", 
@@ -261,8 +262,8 @@ function Admin() {
         });
         fetchUsers();
         alert("O'quvchi muvaffaqiyatli qo'shildi!");
-      } else {
-        alert("Xatolik: " + error.message);
+      } catch (e) {
+        alert("Xatolik: " + e.message);
       }
     } catch (error) {
       alert("Xatolik: " + error.message);
@@ -319,14 +320,7 @@ function Admin() {
     };
 
     try {
-      const { error } = await supabase
-        .from("users")
-        .update(updatePayload)
-        .eq("id", id);
-      if (error) {
-        alert("Xatolik: " + error.message);
-        return;
-      }
+      await api.adminUpdate('users', { id }, updatePayload);
       await fetchUsers();
       closeEdit();
       alert("O'quvchi ma'lumotlari yangilandi!");
@@ -364,13 +358,9 @@ function Admin() {
   async function deleteUser(id) {
     if (window.confirm("O'quvchini o'chirishni xohlaysizmi?")) {
       try {
-        const { error } = await supabase.from("users").delete().eq("id", id);
-        if (!error) {
-          setUsers(users.filter(u => u.id !== id));
-          alert("O'quvchi o'chirildi!");
-        } else {
-          alert("Xatolik: " + error.message);
-        }
+        await api.adminDelete('users', { id });
+        setUsers(users.filter(u => u.id !== id));
+        alert("O'quvchi o'chirildi!");
       } catch (error) {
         alert("Xatolik: " + error.message);
       }
@@ -379,12 +369,15 @@ function Admin() {
 
   // Tests CRUD
   async function fetchTests() {
-    let { data } = await supabase.from("questions").select("*");
-    setTests(data || []);
-    
-    let { data: choicesData } = await supabase.from("choices").select("*");
-    setChoices(choicesData || []);
-    setFilteredTests(data || []);
+    try {
+      const data = await api.adminSelect('questions', { select: '*' });
+      setTests(data || []);
+      const choicesData = await api.adminSelect('choices', { select: '*' });
+      setChoices(choicesData || []);
+      setFilteredTests(data || []);
+    } catch (e) {
+      console.error('fetchTests error', e);
+    }
   }
 
   // Search functions
@@ -460,13 +453,9 @@ function Admin() {
       description: "Testni o'chirishni xohlaysizmi?",
       onConfirm: async () => {
         try {
-        await supabase.from("choices").delete().eq("question_id", id);
-        const { error } = await supabase.from("questions").delete().eq("id", id);
-        if (!error) {
-          setTests(tests.filter(t => t.id !== id));
-        } else {
-          alert("Xatolik: " + error.message);
-        }
+        await api.adminDelete('choices', { question_id: id });
+        await api.adminDelete('questions', { id });
+        setTests(tests.filter(t => t.id !== id));
       } catch (error) {
         alert("Xatolik: " + error.message);
         } finally {
@@ -478,9 +467,13 @@ function Admin() {
 
   // Darsliklar CRUD
   async function fetchDarsliklar() {
-    let { data } = await supabase.from("darsliklar").select("*").order("order_number");
-    setDarsliklar(data || []);
-    setFilteredDarsliklar(data || []);
+    try {
+      const data = await api.adminSelect('darsliklar', { select: '*', order: [{ column: 'order_number' }] });
+      setDarsliklar(data || []);
+      setFilteredDarsliklar(data || []);
+    } catch (e) {
+      console.error('fetchDarsliklar error', e);
+    }
   }
 
   // Search functions
@@ -505,13 +498,13 @@ function Admin() {
       return;
     }
 
-    const { error } = await supabase.from("darsliklar").insert([newDarslik]);
-    if (!error) {
+    try {
+      await api.adminInsert('darsliklar', [newDarslik]);
       setNewDarslik({ title: "", description: "", video_url: "", order_number: 1 });
       fetchDarsliklar();
       alert("Darslik muvaffaqiyatli qo'shildi!");
-    } else {
-      alert("Xatolik: " + error.message);
+    } catch (e) {
+      alert("Xatolik: " + e.message);
     }
   }
 
@@ -521,11 +514,11 @@ function Admin() {
       title: "Darslikni o'chirish",
       description: "Darslikni o'chirishni xohlaysizmi?",
       onConfirm: async () => {
-      const { error } = await supabase.from("darsliklar").delete().eq("id", id);
-      if (!error) {
+      try {
+        await api.adminDelete('darsliklar', { id });
         setDarsliklar(darsliklar.filter(d => d.id !== id));
-      } else {
-        alert("Xatolik: " + error.message);
+      } catch (e) {
+        alert("Xatolik: " + e.message);
       }
         setConfirmState(cs => ({ ...cs, open: false }));
     }
@@ -533,9 +526,13 @@ function Admin() {
   }
 
   async function fetchArchived() {
-    let { data } = await supabase.from('users_archive').select('*');
-    setArchived(data || []);
-    setArchivedFiltered(data || []);
+    try {
+      const data = await api.adminSelect('users_archive', { select: '*' });
+      setArchived(data || []);
+      setArchivedFiltered(data || []);
+    } catch (e) {
+      console.error('fetchArchived error', e);
+    }
   }
 
   function filterArchived(term) {

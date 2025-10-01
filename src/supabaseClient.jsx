@@ -1,6 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
+// Supabase client removed from frontend to prevent exposing API keys in the browser.
+// All frontend code should call your Netlify Function endpoints (e.g. /api/fetch-items)
+// which run server-side and use the secure SERVICE_ROLE key from environment variables.
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oietcsgsbklgqjatefxt.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZXRjc2dzYmtsZ3FqYXRlZnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTg5NTAsImV4cCI6MjA2NDI5NDk1MH0.I_1HUJSBjclNsNNI69yr133UD-VZZCdAoMpLCBQb_ns'
+// This module exports a proxy that throws when any property is accessed so that
+// accidental direct calls to Supabase from the client fail loudly during development.
+const throwOnUse = () => {
+  throw new Error(
+    'Direct Supabase access from the frontend is disabled. Use server endpoints (Netlify Functions) instead.'
+  );
+};
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey); 
+export const supabase = new Proxy({}, {
+  get: () => throwOnUse,
+  apply: () => throwOnUse,
+});
+
+// NOTE for developers:
+// - Remove any VITE_SUPABASE_ANON_KEY from your `.env` files and Netlify build env.
+// - Replace direct `supabase.from(...)` calls with fetch to your backend endpoints.

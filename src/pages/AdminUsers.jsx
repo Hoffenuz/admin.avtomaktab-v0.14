@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient.jsx";
+import api from '../lib/adminApi';
 import { useAuth } from "../AuthContext.jsx";
 import { Navigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal.jsx";
@@ -137,7 +138,8 @@ function AdminUsers() {
   async function fetchUsers() {
     setLoading(true);
     try {
-      let { data } = await supabase.from("users").select("*");
+      const api = await import('../lib/adminApi');
+      const data = await api.default.adminSelect('users', { select: '*' });
       setUsers(data || []);
       setFilteredUsers(data || []);
     } catch (error) {
@@ -202,9 +204,9 @@ function AdminUsers() {
         exit_date: newUser.exit_date ? displayToIso(newUser.exit_date) : null,
         user_number: newUser.user_number ? parseInt(newUser.user_number, 10) : null
       };
-      
-      const { error } = await supabase.from("users").insert([userToSave]);
-      if (!error) {
+      try {
+        const api = await import('../lib/adminApi');
+        await api.default.adminInsert('users', [userToSave]);
         setNewUser({ 
           fio: "", 
           phone: "", 
@@ -221,7 +223,7 @@ function AdminUsers() {
         setPhoneError("");
         fetchUsers();
         alert("O'quvchi muvaffaqiyatli qo'shildi!");
-      } else {
+      } catch (error) {
         alert("Xatolik: " + error.message);
       }
     } catch (error) {
@@ -338,12 +340,13 @@ function AdminUsers() {
       description: "O'quvchini o'chirishni xohlaysizmi? Bu amalni qaytarib bo'lmaydi.",
       onConfirm: async () => {
         try {
-          const { error } = await supabase.from("users").delete().eq("id", id);
-          if (!error) {
-            setUsers(users.filter(u => u.id !== id));
-          } else {
-            alert("Xatolik: " + error.message);
-          }
+      try {
+        const api = await import('../lib/adminApi');
+        await api.default.adminDelete('users', { id });
+        setUsers(users.filter(u => u.id !== id));
+      } catch (error) {
+        alert("Xatolik: " + error.message);
+      }
         } catch (error) {
           alert("Xatolik: " + error.message);
         } finally {

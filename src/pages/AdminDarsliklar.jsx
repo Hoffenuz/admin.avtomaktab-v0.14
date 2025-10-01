@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient.jsx";
+import api from '../lib/adminApi';
 import { useAuth } from "../AuthContext.jsx";
 import { Navigate } from "react-router-dom";
 import { formatDate } from "../utils/dateUtils.js";
@@ -20,8 +21,12 @@ function AdminDarsliklar() {
   async function fetchUsers() {
     setLoading(true);
     try {
-      let { data } = await supabase.from("users").select("*");
-      setUsers(data || []);
+      try {
+        const data = await api.adminSelect('users', { select: '*' });
+        setUsers(data || []);
+      } catch (e) {
+        console.error('fetch users error', e);
+      }
       setFilteredUsers(data || []);
     } catch (error) {
       console.error("O'quvchilarni yuklashda xatolik:", error);
