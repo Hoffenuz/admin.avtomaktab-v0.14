@@ -31,10 +31,23 @@ async function validateUserToken(token) {
 }
 
 exports.handler = async function (event) {
+  // CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   try {
     // Allow only GET
     if (event.httpMethod !== 'GET') {
-      return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+      return { statusCode: 405, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
     // Extract token from Authorization header
@@ -43,24 +56,24 @@ exports.handler = async function (event) {
 
     const user = await validateUserToken(token);
     if (!user || !user.id) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+      return { statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
     // Authorized: fetch items using service role key (server-side)
     const { data, error } = await supabase.from('items').select('*');
     if (error) {
       console.error('Supabase error:', error);
-      return { statusCode: 500, body: JSON.stringify({ error: 'Failed to fetch items' }) };
+      return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Failed to fetch items' }) };
     }
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ items: data }),
     };
   } catch (err) {
     console.error('Unexpected error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Internal server error' }) };
+    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Internal server error' }) };
   }
 };
 
