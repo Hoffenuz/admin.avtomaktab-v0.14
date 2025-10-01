@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient.jsx";
 import api from '../lib/adminApi';
 import { useAuth } from "../AuthContext.jsx";
 import { Navigate } from "react-router-dom";
