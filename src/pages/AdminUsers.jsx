@@ -263,14 +263,7 @@ function AdminUsers() {
     const currentPaid = Number(paymentUser.paid_fee || 0);
     const newPaid = currentPaid + amount;
     try {
-      const { error } = await supabase
-        .from("users")
-        .update({ paid_fee: newPaid })
-        .eq("id", paymentUser.id);
-      if (error) {
-        alert("Xatolik: " + error.message);
-        return;
-      }
+      await api.adminUpdate('users', { id: paymentUser.id }, { paid_fee: newPaid });
       closePayment();
       await fetchUsers();
       alert("To'lov qo'shildi");
@@ -317,14 +310,7 @@ function AdminUsers() {
     };
 
     try {
-      const { error } = await supabase
-        .from("users")
-        .update(updatePayload)
-        .eq("id", id);
-      if (error) {
-        alert("Xatolik: " + error.message);
-        return;
-      }
+      await api.adminUpdate('users', { id }, updatePayload);
       await fetchUsers();
       closeEdit();
       alert("O'quvchi ma'lumotlari yangilandi!");
@@ -341,11 +327,12 @@ function AdminUsers() {
       onConfirm: async () => {
         try {
       try {
-        const api = await import('../lib/adminApi');
-        await api.default.adminDelete('users', { id });
+        await api.adminDelete('users', { id });
         setUsers(users.filter(u => u.id !== id));
       } catch (error) {
         alert("Xatolik: " + error.message);
+      } finally {
+        setConfirmState(cs => ({ ...cs, open: false }));
       }
         } catch (error) {
           alert("Xatolik: " + error.message);
