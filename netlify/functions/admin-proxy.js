@@ -1,6 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 
+if (process.env.NODE_ENV !== "production") {
+  require('dotenv').config();
+}
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'change-me-in-prod';
