@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 if (process.env.NODE_ENV !== 'production') {
-  import('dotenv').then(d => d.config());
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // ignore
+  }
 }
 
 // Use ADMIN_JWT_SECRET primarily; accept common fallbacks for compatibility

@@ -1,18 +1,22 @@
-import jwt from "jsonwebtoken";
-import { createClient } from "@supabase/supabase-js";
+const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
 
 if (process.env.NODE_ENV !== 'production') {
-  import('dotenv').then(d => d.config());
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // ignore
+  }
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Support multiple env var names to avoid name-mismatch between local and Netlify
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "change-me-in-prod";
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'change-me-in-prod';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-export async function handler(event) {
+exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,

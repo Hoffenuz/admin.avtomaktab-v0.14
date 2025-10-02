@@ -5,7 +5,8 @@ const reactRefresh = require('eslint-plugin-react-refresh')
 const { defineConfig, globalIgnores } = require('eslint/config')
 
 module.exports = defineConfig([
-  globalIgnores(['dist']),
+  // ignore build and tooling directories to avoid linting generated files
+  globalIgnores(['dist', '.netlify', 'node_modules']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
