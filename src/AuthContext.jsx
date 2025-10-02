@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
       const token = json.token;
       if (!token) return { error: 'Login failed' };
       // Optionally fetch admin user info via admin-proxy
-      const userData = (await adminApi.adminSelect('admins', { select: '*', filters: { username } }))?.[0] || { username };
+      const userData = (await adminApi.adminSelect('admin', { select: '*', filters: { username } }))?.[0] || { username };
       localStorage.setItem('adminAuthToken', token);
       localStorage.setItem('adminUser', JSON.stringify(userData));
       setUser(userData);
@@ -73,11 +73,11 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('adminAuthToken');
       if (!token) return { error: 'Not authenticated' };
       // Validate current password via admin-proxy select
-      const existing = await adminApi.adminSelect('admins', { select: '*', filters: { id: user.id } });
+      const existing = await adminApi.adminSelect('admin', { select: '*', filters: { id: user.id } });
       const adminRow = existing?.[0];
       if (!adminRow) return { error: 'Foydalanuvchi topilmadi' };
       // For simplicity we send update request; server should validate currentPassword
-      const updated = await adminApi.adminUpdate('admins', { id: user.id }, payload);
+      const updated = await adminApi.adminUpdate('admin', { id: user.id }, payload);
       const newUser = Array.isArray(updated) ? updated[0] : updated;
       localStorage.setItem('adminUser', JSON.stringify(newUser));
       setUser(newUser);

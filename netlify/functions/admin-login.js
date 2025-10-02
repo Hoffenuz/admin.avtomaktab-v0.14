@@ -7,7 +7,8 @@ if (process.env.NODE_ENV !== "production") {
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "change-me-in-prod";
+// Support multiple env var names to avoid name-mismatch between local and Netlify
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "change-me-in-prod";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

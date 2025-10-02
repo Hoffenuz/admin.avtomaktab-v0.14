@@ -1,31 +1,18 @@
-const fetch = require('node-fetch');
-const { createClient } = require('@supabase/supabase-js');
+// Temporarily disabled fetching items from Supabase.
+// This function will only validate the Authorization header and return a minimal response
+// so the admin panel can log in while DB access is hidden.
+const jwt = require('jsonwebtoken');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('Missing Supabase env vars (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)');
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || 'change-me-in-prod';
 
-// Helper: validate user token by calling Supabase Auth user endpoint
-async function validateUserToken(token) {
-  if (!token) return null;
+function verifyToken(token) {
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: SUPABASE_ANON_KEY || '',
-      },
-    });
-    if (!res.ok) return null;
-    return await res.json();
+    return jwt.verify(token, ADMIN_JWT_SECRET);
   } catch (err) {
-    console.error('Token validation error', err);
     return null;
   }
 }
@@ -44,35 +31,26 @@ exports.handler = async function (event) {
     };
   }
 
-  try {
-    // Allow only GET
-    if (event.httpMethod !== 'GET') {
-      return { statusCode: 405, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
-    }
+  if (event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+  }
 
-    // Extract token from Authorization header
+  try {
     const authHeader = (event.headers && (event.headers.authorization || event.headers.Authorization)) || '';
     const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (!token) return { statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Missing token' }) };
 
-    const user = await validateUserToken(token);
-    if (!user || !user.id) {
-      return { statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Unauthorized' }) };
-    }
+    const user = verifyToken(token);
+    if (!user) return { statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Unauthorized' }) };
 
-    // Authorized: fetch items using service role key (server-side)
-    const { data, error } = await supabase.from('items').select('*');
-    if (error) {
-      console.error('Supabase error:', error);
-      return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Failed to fetch items' }) };
-    }
-
+    // Return minimal response (no items) so UI behaves as logged-in but no DB data shown
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ items: data }),
+      body: JSON.stringify({ items: [], message: 'Items access disabled for now' })
     };
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error('fetch-items error', err);
     return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Internal server error' }) };
   }
 };
