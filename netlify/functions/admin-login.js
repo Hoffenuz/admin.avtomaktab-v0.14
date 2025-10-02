@@ -68,8 +68,7 @@ export async function handler(event) {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      // return token and minimal admin info so frontend doesn't need to call admin-proxy
-      body: JSON.stringify({ token, admin: { id: admin.id, username: admin.username } })
+      body: JSON.stringify({ token })
     };
   } catch (err) {
     console.error("Unexpected error in admin-login", err);
