@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import { createClient } from "@supabase/supabase-js";
 
-if (process.env.NODE_ENV !== "production") {
-  require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  import('dotenv').then(d => d.config());
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL;

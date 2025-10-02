@@ -3,12 +3,11 @@ const ADMIN_TOKEN_KEY = 'adminAuthToken';
 
 async function callAdminProxy(body) {
   const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch('/api/admin-proxy', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: token ? `Bearer ${token}` : ''
-    },
+    headers,
     body: JSON.stringify(body)
   });
   if (!res.ok) {

@@ -43,9 +43,10 @@ export function AuthProvider({ children }) {
       const json = await res.json();
       const token = json.token;
       if (!token) return { error: 'Login failed' };
-      // Optionally fetch admin user info via admin-proxy
-      const userData = (await adminApi.adminSelect('admin', { select: '*', filters: { username } }))?.[0] || { username };
+      // Save token first so subsequent proxy calls can read it
       localStorage.setItem('adminAuthToken', token);
+      // Optionally fetch admin user info via admin-proxy (now token is available)
+      const userData = (await adminApi.adminSelect('admin', { select: '*', filters: { username } }))?.[0] || { username };
       localStorage.setItem('adminUser', JSON.stringify(userData));
       setUser(userData);
       setIsAdmin(true);
